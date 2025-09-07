@@ -5,7 +5,7 @@ import NewMedia from "./triggers/new_media.js";
 import CreateProject from "./creates/create_project.js";
 
 export default defineApp({
-  version: "1.0.2",
+  version: "1.0.3",
   platformVersion,
   authentication,
   beforeRequest: [addAuthHeader],

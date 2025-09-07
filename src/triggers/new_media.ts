@@ -13,16 +13,30 @@ const SAMPLE = {
   hashed_id: "abc123def456",
 };
 
+interface CursorData {
+  updated: string;
+  id: string;
+}
+
 const perform: PollingTriggerPerform = async (z, bundle) => {
-  // Return sample data for editor loading
+  // Early return for sample loading - no API calls or cursor operations
   if (bundle.meta?.isLoadingSample) {
     return [SAMPLE];
   }
 
-  // Get cursor with error handling
-  let cursor = "";
+  // Robust cursor handling with try/catch for both read and write
+  let cursorData: CursorData | null = null;
   try {
-    cursor = (await z.cursor.get()) || "";
+    const cursorStr = await z.cursor.get();
+    if (cursorStr) {
+      try {
+        // Try to parse as JSON (new format with updated + id)
+        cursorData = JSON.parse(cursorStr);
+      } catch {
+        // Fallback for legacy cursor (just updated timestamp)
+        cursorData = { updated: cursorStr, id: "" };
+      }
+    }
   } catch (e: any) {
     z.console.log("cursor.get failed:", e?.message);
   }
@@ -66,23 +80,38 @@ const perform: PollingTriggerPerform = async (z, bundle) => {
       }
     }
 
-    // Filter by cursor (high-watermark)
-    const filtered = cursor
-      ? items.filter((m) => m.updated && m.updated > cursor)
+    // Filter by cursor using (updated, id) pair for deduplication
+    const filtered = cursorData
+      ? items.filter((m) => {
+          if (!m.updated || !m.id) return false;
+          // Compare by updated timestamp first, then by id for tie-breaking
+          if (m.updated > cursorData!.updated) return true;
+          if (m.updated === cursorData!.updated && m.id > cursorData!.id) return true;
+          return false;
+        })
       : items;
 
-    // Update cursor with the latest updated timestamp from ALL items (not filtered)
+    // Update cursor with the latest (updated, id) pair from ALL items
     if (items.length > 0) {
       try {
-        const validTimestamps = items
-          .map((m) => m.updated)
-          .filter((timestamp): timestamp is string => Boolean(timestamp))
-          .sort();
+        // Sort by updated desc, then by id desc for tie-breaking
+        const sortedItems = items
+          .filter((m) => m.updated && m.id)
+          .sort((a, b) => {
+            if (a.updated! !== b.updated!) {
+              return a.updated! > b.updated! ? -1 : 1;
+            }
+            return a.id > b.id ? -1 : 1;
+          });
         
-        if (validTimestamps.length > 0) {
-          const maxUpdated = validTimestamps[validTimestamps.length - 1];
-          if (maxUpdated) {
-            await z.cursor.set(maxUpdated);
+        if (sortedItems.length > 0) {
+          const latest = sortedItems[0];
+          if (latest && latest.updated && latest.id) {
+            const newCursor: CursorData = {
+              updated: latest.updated,
+              id: latest.id,
+            };
+            await z.cursor.set(JSON.stringify(newCursor));
           }
         }
       } catch (e: any) {
@@ -90,7 +119,7 @@ const perform: PollingTriggerPerform = async (z, bundle) => {
       }
     }
 
-    // Respect limit from bundle.meta
+    // Respect bundle.meta.limit if defined
     const limit = typeof bundle.meta?.limit === "number" ? bundle.meta.limit : undefined;
     const result = limit ? filtered.slice(0, limit) : filtered;
     

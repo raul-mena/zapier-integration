@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const ProjectCreateInput = z.object({
-  name: z.string().min(1),
+  name: z.string().trim().min(1, "Project name cannot be empty"),
 });
 
 export type ProjectCreateInput = z.infer<typeof ProjectCreateInput>;
