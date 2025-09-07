@@ -1,9 +1,10 @@
 {
   "name": "coderslink-wistia",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Wistia integration for Zapier",
   "scripts": {
     "test": "npm run build && vitest --run",
+    "test:local": "npm run build && node dist/test/local-harness.js",
     "clean": "rimraf ./dist ./build",
     "build": "npm run clean && tsc",
     "_zapier-build": "npm run build",

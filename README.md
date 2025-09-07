@@ -2,7 +2,69 @@
 
 A robust, production-ready Zapier integration for Wistia that enables automated workflows between Wistia and thousands of other apps. This integration provides triggers for new/updated media and actions for creating projects.
 
-**Current Version:** 1.0.2 - Includes critical stability fixes and enhanced error handling.
+**Current Version:** 1.0.3 - Production-ready with enhanced cursor management, robust error handling, and publishing readiness.
+
+## 🚀 Quickstart
+
+### 1. Register or Link Your Integration
+
+**For new integrations:**
+```bash
+zapier register "Your Wistia Integration Name"
+```
+
+**For existing integrations:**
+```bash
+zapier link
+```
+
+### 2. Get Your Wistia API Token
+
+1. Log into your Wistia account
+2. Go to **Account Settings** → **API**
+3. Click **"Generate new token"**
+4. Copy the generated token (keep it secure!)
+
+### 3. Build and Deploy
+
+```bash
+# Install dependencies
+npm install
+
+# Build the integration
+npm run build
+
+# Validate the integration
+zapier validate
+
+# Push to Zapier platform
+zapier push
+```
+
+### 4. Test in Zap Editor
+
+1. Go to [zapier.com/app/editor](https://zapier.com/app/editor)
+2. Create a new Zap
+3. Search for your integration name
+4. Connect using your Wistia API token
+5. Test the trigger and action
+
+**Testing the Trigger:**
+- **Sample Mode**: Returns static sample data without API calls
+- **Real Mode**: Fetches actual media from your Wistia account
+- **Limit Handling**: Respects `bundle.meta.limit` for testing
+
+**Testing the Action:**
+- Creates a real project in your Wistia account
+- Validates project name (trimmed, non-empty)
+- Returns project details for next Zap steps
+
+### 5. View Task History
+
+Monitor your Zap's performance:
+1. Go to **My Zaps** in Zapier dashboard
+2. Click on your Zap
+3. View **Task History** tab for execution logs and errors
 
 ## 🚀 Features
 
@@ -233,11 +295,16 @@ zapier test
 
 ## 🧪 Testing
 
+### Automated Test Suite
+
 Run the test suite to verify functionality:
 
 ```bash
 # Run all tests
 npm test
+
+# Run local testing harness
+npm run test:local
 
 # Tests include:
 # - Authentication middleware
@@ -246,6 +313,40 @@ npm test
 # - Data validation
 # - Mock API responses
 ```
+
+### Local Testing Harness
+
+Test your integration locally with real API calls:
+
+1. **Setup Environment:**
+   ```bash
+   cp .env.example .env
+   # Edit .env and add your WISTIA_API_TOKEN
+   ```
+
+2. **Run Local Tests:**
+   ```bash
+   npm run test:local
+   ```
+
+3. **Validate Output:**
+   - Authentication test should return account info
+   - Trigger test should return media array
+   - Action test should create a project and return details
+
+### Manual Testing in Zapier Editor
+
+**Trigger Testing:**
+- Test with "Load Sample" (should return quickly without API calls)
+- Test with "Test Trigger" (should fetch real data)
+- Verify cursor management between test runs
+- Check limit handling with different values
+
+**Action Testing:**
+- Test project creation with valid names
+- Test validation with empty/whitespace names
+- Verify error handling with invalid tokens
+- Check response format matches output fields
 
 ## 📚 API Reference
 
@@ -261,25 +362,6 @@ npm test
 | --------------------- | -------- | --------------------------- | --------------------- |
 | `WISTIA_API_TOKEN`    | Yes      | -                           | Your Wistia API token |
 | `WISTIA_API_BASE_URL` | No       | `https://api.wistia.com/v1` | Wistia API base URL   |
-
-## 🔄 Recent Updates (v1.0.2)
-
-### Critical Fixes Applied
-
-- **Schema Type Handling**: Fixed ID field type mismatch between API (number) and schema (string)
-- **Cursor Management**: Corrected cursor logic to use proper timestamp handling
-- **Error Recovery**: Added graceful handling for malformed API responses
-- **Individual Item Parsing**: Continue processing even when some items fail validation
-- **Enhanced Logging**: Added comprehensive debugging information for troubleshooting
-- **Empty Response Handling**: Proper handling of accounts with no media
-- **Middleware Cleanup**: Removed unused imports and optimized middleware
-
-### Stability Improvements
-
-- Robust polling mechanism that handles API inconsistencies
-- Automatic type conversion for mixed data types from Wistia API
-- Enhanced cursor management with fallback strategies
-- Production-ready error handling and recovery
 
 ## 🔗 Useful Links
 
